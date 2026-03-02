@@ -1,0 +1,46 @@
+# Task 1: Information Extraction
+screening_task:
+  description: >
+    Analyze the following user input: "{user_input}".
+    Identify: Age, Monthly Income, Current State, and Primary Need (Housing/Food/Health).
+    If any of these 4 items are missing, your output MUST be a clarifying question.
+  expected_output: >
+    A JSON object: {{"age": int, "income": int, "location": str, "needs": []}} 
+    OR a string starting with "QUESTION: [Your question]".
+  agent: screener_agent
+
+# Task 2: Live Policy Retrieval
+research_policy_task:
+  description: >
+    Using the location and needs from the screening_task, search API Setu 
+    (Social Welfare category) and official .gov websites for 2026 criteria.
+    Focus on finding the exact income and age cut-offs for "{needs}".
+  expected_output: >
+    A list of active schemes with specific eligibility numbers and source URLs.
+  agent: researcher_agent
+  context: [screening_task]
+
+# Task 3: Boolean Eligibility Check
+eligibility_judgment_task:
+  description: >
+    Compare the User JSON from screening_task against the thresholds found 
+    in research_policy_task. 
+    Step 1: Check Age. Step 2: Check Income. Step 3: Check Location.
+    Determine if the user qualifies for each identified scheme.
+  expected_output: >
+    A detailed breakdown of "Qualified", "Not Qualified", or "Maybe (Edge Case)" 
+    with a 1-sentence explanation for each.
+  agent: judge_agent
+  context: [screening_task, research_policy_task]
+
+# Task 4: Final Roadmap Generation
+navigation_task:
+  description: >
+    Take the "Qualified" results from the judge and use the Browser Tool 
+    to find the direct application URL. 
+    Then, create a "Benefit Roadmap" PDF including a document checklist 
+    (ID proof, Income cert, etc.).
+  expected_output: >
+    The file path to the generated PDF and a summary of the next 3 steps the user should take.
+  agent: navigator_agent
+  context: [eligibility_judgment_task]
